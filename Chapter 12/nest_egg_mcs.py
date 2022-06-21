@@ -13,6 +13,44 @@ import matplotlib.pyplot as plt
 import typing
 
 
+class DataSet:
+    """
+    TODO EXPLAIN
+    """
+
+    @staticmethod
+    def parse_source_files():
+        """
+        TODO EXPLAIN
+
+        :return:
+        :rtype: DataSet
+        """
+
+        bonds = read_percentages("10-yr_TBond_returns_1926-2013_pct.txt")
+        stocks = read_percentages("SP500_returns_1926-2013_pct.txt")
+        blend_a = read_percentages("S-B-C_blend_1926-2013_pct.txt")
+        blend_b = read_percentages("S-B_blend_1926-2013_pct.txt")
+        inflation_rates = read_percentages("annual_infl_rate_1926-2013_pct.txt")
+
+        result = DataSet(bonds, stocks, blend_a, blend_b, inflation_rates)
+        return result
+
+    def __init__(self, bonds, stocks, blend_40_50_10, blend_50_50, inflation_rates):
+        """
+        :param list[float] bonds: TODO EXPLAIN
+        :param list[float] stocks:
+        :param list[float] blend_40_50_10:
+        :param list[float] blend_50_50: 
+        :param list[float] inflation_rates:
+        """
+        self.bonds = bonds
+        self.stocks = stocks
+        self.blend_40_50_10 = blend_40_50_10
+        self.blend_50_50 = blend_50_50
+        self.inflation_rates = inflation_rates
+
+
 def read_percentages(path):
     """
     TODO EXPLAIN
@@ -54,7 +92,7 @@ def default_input(prompt, default=None):
     :rtype: str | None
     """
     if default:
-        prompt = prompt + f" [{default}]"
+        prompt += f" [{default}]"
     prompt += ": "
 
     response = input(prompt).strip()
@@ -69,7 +107,7 @@ def run():
 
     :return: None
     """
-    pass
+    DataSet.parse_source_files()
 
 
 if __name__ == "__main__":
