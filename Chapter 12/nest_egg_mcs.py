@@ -189,17 +189,6 @@ def default_input(prompt, default=None):
     return response
 
 
-def read_ini(path="mcs.ini"):
-    """
-    TODO EXPLAIN
-
-    :param str path:
-
-    :return:
-    :rtype:
-    """
-
-
 def run():
     """
     Main function of this script. TODO EXPLAIN MORE
