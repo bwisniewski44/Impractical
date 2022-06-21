@@ -123,6 +123,13 @@ class MCSParameters:
         :param int max_years:
         :param int case_count:
         """
+
+        # Validate that the incoming numbers make sense
+        if case_count < 1:
+            raise ValueError(f"Expecting at least 1 case; got {case_count}")
+        elif not (min_years <= likely_years <= max_years):
+            raise ValueError(f"Min/Likely/Max years check failed: {min_years} <= {likely_years} <= {max_years}")
+
         self.investment_type = investment_type
         self.start_value = start_value
         self.withdrawal = withdrawal
