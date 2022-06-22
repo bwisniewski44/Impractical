@@ -7,6 +7,7 @@ Source files:
 https://www.nostarch.com/impracticalpython
 """
 
+import time
 import sys
 import random
 import math
@@ -401,6 +402,8 @@ def run():
 
     :return: None
     """
+    begin_time = time.time()
+
     try:
         data = DataSet.parse_source_files()
     except Exception as error:
@@ -425,6 +428,9 @@ def run():
 
     results = run_mcs(parameters, return_ratios, data.inflation_rates)
     print_report(sys.stdout, parameters, results)
+
+    runtime = time.time() - begin_time
+    print(f"App finished in {runtime:.2f}s.")
 
 
 if __name__ == "__main__":
