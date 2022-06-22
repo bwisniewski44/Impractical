@@ -13,7 +13,6 @@ import random
 import math
 import typing
 from configparser import ConfigParser
-import heapq
 
 
 class Scenario:
@@ -32,17 +31,6 @@ class Scenario:
         self.lifetime = lifetime
         self.years_completed = years_completed
         self.remaining_funds = remaining_funds
-
-    def __lt__(self, other):
-        """
-        TODO EXPLAIN
-
-        :param Scenario other:
-
-        :return:
-        :rtype: bool
-        """
-        return self.remaining_funds < other.remaining_funds
 
 
 class DataSet:
@@ -301,7 +289,7 @@ def run_mcs(params, returns, inflation):
 
         # Run through the scenario, then add it (in order of remaining funds) to the scenarios already completed
         scenario = play_scenario(params.start_value, params.withdrawal, inflation, returns, start_year, full_years)
-        heapq.heappush(scenarios, scenario)
+        scenarios.append(scenario)
 
         # Modify stats accumulators
         remaining_funds = scenario.remaining_funds
@@ -315,6 +303,7 @@ def run_mcs(params, returns, inflation):
     mean = int(sum_remaining_funds / len(scenarios))
 
     # Calculate the median: that is, take the sorted scenarios and choose that in the middle
+    scenarios.sort(key=lambda s: (scenario.remaining_funds, scenario.years_completed))
     median_index = len(scenarios) // 2
     median = scenarios[median_index].remaining_funds
     if len(scenarios) % 2 == 0:
