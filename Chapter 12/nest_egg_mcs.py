@@ -419,7 +419,7 @@ def plot(results):
         one_based_indices.append(i+1)
         remaining_funds.append(scenario.remaining_funds)
 
-    plt.figure("Outcome by Case", figsize=(10, 5))  # figsize is width, height (in inches)
+    plt.figure("Outcome by Case", figsize=(15, 8))  # figsize is width, height (in inches)
     plt.title(f"Probability of running out of money = {results.risk_expression}", fontsize=20, color="red")
     plt.bar(one_based_indices, remaining_funds, color="black")
 
@@ -430,7 +430,7 @@ def plot(results):
     # dollar-formatted values
     plt.ylabel("$ Remaining", fontsize=18)
     plt.ticklabel_format(style="plain", axis="y")  # suppress use of scientific notation
-    plt.gca().get_yaxis().set_major_formatter(plt.FuncFormatter(lambda x, _: f"{int(x):,}"))
+    plt.gca().get_yaxis().set_major_formatter(plt.FuncFormatter(lambda x, _: f"${int(x):,}"))
 
     plt.show()
 
@@ -466,7 +466,6 @@ def run():
             )
 
     results = run_mcs(parameters, return_ratios, data.inflation_rates)
-    risk_expression = f"{100*results.risk_of_ruin+0.5:.2f}%"
 
     runtime = time.time() - begin_time
     print(f"\nMCS completed in {runtime:.2f}s.")
