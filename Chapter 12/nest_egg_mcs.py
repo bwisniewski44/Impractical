@@ -13,6 +13,7 @@ import random
 import math
 import typing
 from configparser import ConfigParser
+import matplotlib.pyplot as plt
 
 
 class Scenario:
@@ -31,6 +32,13 @@ class Scenario:
         self.lifetime = lifetime
         self.years_completed = years_completed
         self.remaining_funds = remaining_funds
+
+    def __str__(self):
+        result = f"[{self.begin_year}] {self.lifetime}yrs"
+        if self.years_completed < self.lifetime:
+            result += f"(completed {self.years_completed})"
+        result += f": ${self.remaining_funds:,}"
+        return result
 
 
 class DataSet:
@@ -303,7 +311,7 @@ def run_mcs(params, returns, inflation):
     mean = int(sum_remaining_funds / len(scenarios))
 
     # Calculate the median: that is, take the sorted scenarios and choose that in the middle
-    scenarios.sort(key=lambda s: (scenario.remaining_funds, scenario.years_completed))
+    scenarios.sort(key=lambda s: s.remaining_funds)
     median_index = len(scenarios) // 2
     median = scenarios[median_index].remaining_funds
     if len(scenarios) % 2 == 0:
@@ -312,7 +320,7 @@ def run_mcs(params, returns, inflation):
         preceding_value = scenarios[median_index-1].remaining_funds
         median = int((median + preceding_value) / 2)
 
-    summary = SimulationSummary(min_, mean, median, max_, len(scenarios), bankruptcies)
+    summary = SimulationSummary(min_, mean, median, max_, len(scenarios), bankruptcies, scenarios)
     return summary
 
 
@@ -321,7 +329,7 @@ class SimulationSummary:
     TODO EXPLAIN
     """
 
-    def __init__(self, min_, mean, median, max_, count, bankruptcies):
+    def __init__(self, min_, mean, median, max_, count, bankruptcies, outcomes):
         """
         :param int min_:
         :param int mean:
@@ -329,6 +337,7 @@ class SimulationSummary:
         :param int max_:
         :param int count:
         :param int bankruptcies:
+        :param list[Scenario] outcomes:
         """
 
         self.min = min_
@@ -337,6 +346,7 @@ class SimulationSummary:
         self.max_ = max_
         self.count = count
         self.bankruptcies = bankruptcies
+        self.outcomes = outcomes
 
     @property
     def risk_of_ruin(self):
@@ -385,6 +395,37 @@ def print_report(outfile, mcs_parameters, mcs_results):
     outfile.write(f"Median: ${mcs_results.median:,}\n")
 
 
+def plot(risk_of_ruin, outcomes):
+    """
+    TODO EXPLAIN
+
+    :param float risk_of_ruin:
+    :param list[Scenario] outcomes:
+
+    :return: None
+    """
+
+    # Build the indices and values
+    one_based_indices = []  # type: typing.List[int]
+    remaining_funds = []    # type: typing.List[int]
+    for i, scenario in enumerate(outcomes):
+        one_based_indices.append(i+1)
+        remaining_funds.append(scenario.remaining_funds)
+
+    plt.figure("Outcome by Case", figsize=(16, 5))  # figsize is width, height (in inches)
+    plt.bar(one_based_indices, remaining_funds, color="black")
+    plt.xlabel("Simulated Lives", fontsize=18)
+    plt.ylabel("$ Remaining", fontsize=18)
+
+    # Ensure that Y-axis graduations feature not scientific notation, but instead dollar-formatted values
+    plt.ticklabel_format(style="plain", axis="y")  # suppress use of scientific notation
+    plt.gca().get_yaxis().set_major_formatter(plt.FuncFormatter(lambda x, _: f"{int(x):,}"))
+
+    plt.title(f"Probability of running out of money = {100*risk_of_ruin:.2f}", fontsize=20, color="red")
+
+    plt.show()
+
+
 def run():
     """
     Main function of this script. TODO EXPLAIN MORE
@@ -401,25 +442,27 @@ def run():
 
     # Present the user with selections by which to choose investment type
     data_by_codename = {
-        "bonds": (data.bonds, "SP500"),
-        "stocks": (data.stocks, "10-yr Treasury Bond"),
-        "sb_blend": (data.blend_50_50, "50% SP500 / 50% TBond"),
-        "sbc_blend": (data.blend_40_50_10, "40% SP500 / 50% TBond / 10% Cash"),
-    }  # type: typing.Dict[str, typing.Tuple[typing.List[float], str]]
+        "stocks": data.stocks,
+        "bonds": data.bonds,
+        "sb": data.blend_50_50,
+        "sbc": data.blend_40_50_10,
+    }  # type: typing.Dict[str, typing.List[float]]
     parameters = MCSParameters.parse_init("mcs.ini")
-    if parameters.investment_type not in data_by_codename:
+    return_ratios = data_by_codename.get(parameters.investment_type)
+    if return_ratios is None:
         raise \
             ValueError(
-                f"Got illegal investment type '{parameters.investment_type}'; expecting one of "
-                f"{', '.join(data_by_codename)}"
+                f"No such investment type '{parameters.investment_type}'; expecting one of "
+                f"{', '.join(sorted(data_by_codename))}"
             )
-    return_ratios, _ = data_by_codename[parameters.investment_type]
 
     results = run_mcs(parameters, return_ratios, data.inflation_rates)
     print_report(sys.stdout, parameters, results)
 
     runtime = time.time() - begin_time
     print(f"App finished in {runtime:.2f}s.")
+
+    plot(results.risk_of_ruin, results.outcomes)
 
 
 if __name__ == "__main__":
