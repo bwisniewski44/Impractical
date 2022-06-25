@@ -359,6 +359,17 @@ class SimulationSummary:
         result = self.bankruptcies / self.count
         return result
 
+    @property
+    def risk_expression(self):
+        """
+        TODO EXPLAIN
+
+        :return:
+        :rtype: str
+        """
+        result = f"{100*self.risk_of_ruin+0.5:.2f}%"
+        return result
+
 
 def print_report(outfile, mcs_parameters, mcs_results):
     """
@@ -370,9 +381,6 @@ def print_report(outfile, mcs_parameters, mcs_results):
 
     :return: None
     """
-
-    # Resolve the percentage-format expression for the risk of ruin
-    risk_expression = f"{round(100 * mcs_results.risk_of_ruin, 1)}%"
 
     # Print out the simulation parameters
     outfile.write('\n')
@@ -387,7 +395,7 @@ def print_report(outfile, mcs_parameters, mcs_results):
 
     # Print out the results
     outfile.write('\n')
-    outfile.write(f"Risk of ruin: {risk_expression}\n")
+    outfile.write(f"Risk of ruin: {mcs_results.risk_expression}\n")
     outfile.write(f"Bankruptcies: {mcs_results.bankruptcies}\n")
     outfile.write(f"Min: ${mcs_results.min:,}\n")
     outfile.write(f"Max: ${mcs_results.max_:,}\n")
@@ -395,12 +403,11 @@ def print_report(outfile, mcs_parameters, mcs_results):
     outfile.write(f"Median: ${mcs_results.median:,}\n")
 
 
-def plot(risk_of_ruin, outcomes):
+def plot(results):
     """
     TODO EXPLAIN
 
-    :param float risk_of_ruin:
-    :param list[Scenario] outcomes:
+    :param SimulationSummary results:
 
     :return: None
     """
@@ -408,20 +415,22 @@ def plot(risk_of_ruin, outcomes):
     # Build the indices and values
     one_based_indices = []  # type: typing.List[int]
     remaining_funds = []    # type: typing.List[int]
-    for i, scenario in enumerate(outcomes):
+    for i, scenario in enumerate(results.outcomes):
         one_based_indices.append(i+1)
         remaining_funds.append(scenario.remaining_funds)
 
-    plt.figure("Outcome by Case", figsize=(16, 5))  # figsize is width, height (in inches)
+    plt.figure("Outcome by Case", figsize=(10, 5))  # figsize is width, height (in inches)
+    plt.title(f"Probability of running out of money = {results.risk_expression}", fontsize=20, color="red")
     plt.bar(one_based_indices, remaining_funds, color="black")
-    plt.xlabel("Simulated Lives", fontsize=18)
-    plt.ylabel("$ Remaining", fontsize=18)
 
-    # Ensure that Y-axis graduations feature not scientific notation, but instead dollar-formatted values
+    # Apply a label to the X-axis
+    plt.xlabel("Simulated Lives", fontsize=18)
+
+    # Apply a label to the Y-axis, ensuring that graduations feature not scientific notation, but instead
+    # dollar-formatted values
+    plt.ylabel("$ Remaining", fontsize=18)
     plt.ticklabel_format(style="plain", axis="y")  # suppress use of scientific notation
     plt.gca().get_yaxis().set_major_formatter(plt.FuncFormatter(lambda x, _: f"{int(x):,}"))
-
-    plt.title(f"Probability of running out of money = {100*risk_of_ruin:.2f}", fontsize=20, color="red")
 
     plt.show()
 
@@ -457,12 +466,16 @@ def run():
             )
 
     results = run_mcs(parameters, return_ratios, data.inflation_rates)
-    print_report(sys.stdout, parameters, results)
+    risk_expression = f"{100*results.risk_of_ruin+0.5:.2f}%"
 
     runtime = time.time() - begin_time
-    print(f"App finished in {runtime:.2f}s.")
+    print(f"\nMCS completed in {runtime:.2f}s.")
 
-    plot(results.risk_of_ruin, results.outcomes)
+    print("\nWriting reports...")
+    print_report(sys.stdout, parameters, results)
+    print("\nPlotting graphic...")
+    plot(results)
+    print("Done")
 
 
 if __name__ == "__main__":
